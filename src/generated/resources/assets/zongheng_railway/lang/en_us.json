@@ -1,0 +1,8 @@
+{
+  "block.zongheng_railway.track_spawner": "Track Spawner",
+  "commands.zongheng_railway.searchstation.already_searching": "A station search is already running.",
+  "commands.zongheng_railway.searchstation.failed": "Station search failed. Check the server log for details.",
+  "commands.zongheng_railway.searchstation.not_found": "No station was found in the surrounding %s x %s railway regions.",
+  "commands.zongheng_railway.searchstation.searching": "Searching the surrounding %s x %s railway regions for the nearest station...",
+  "commands.zongheng_railway.searchstation.success": "Nearest station coordinates: %s"
+}

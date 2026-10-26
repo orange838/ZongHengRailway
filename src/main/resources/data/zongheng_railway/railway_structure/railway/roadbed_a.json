@@ -1,0 +1,7 @@
+{
+  "class": "roadbed",
+  "type": "ground",
+  "template": "zongheng_railway:railway/ground/roadbed_a",
+  "height_offset": 6,
+  "tags": ["default"]
+}

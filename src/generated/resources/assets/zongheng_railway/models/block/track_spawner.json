@@ -1,0 +1,13 @@
+{
+  "parent": "minecraft:block/cube",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "down": "zongheng_railway:block/track_spawner_bottom",
+    "east": "zongheng_railway:block/track_spawner",
+    "north": "zongheng_railway:block/track_spawner",
+    "particle": "zongheng_railway:block/track_spawner",
+    "south": "zongheng_railway:block/track_spawner",
+    "up": "zongheng_railway:block/track_spawner_top",
+    "west": "zongheng_railway:block/track_spawner"
+  }
+}

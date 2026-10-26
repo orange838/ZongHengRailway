@@ -4,3 +4,6 @@
 /.gradle/
 /src/generated/resources/.cache/
 /logs/
+/.gradle-home/
+/.maven-proxy-cache/
+*.hprof

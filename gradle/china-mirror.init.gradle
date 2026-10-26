@@ -1,0 +1,56 @@
+// 国内网络下 NeoForge 官方 maven（maven.neoforged.net）常被 DNS 污染 / 连接超时。
+// 这里做三件事：
+//   1. releases 仓库 -> creeperhost（NeoForged 官方给出的备用镜像）
+//   2. mojang-meta 仓库 -> 本地替身 local-maven/mojang-meta（镜像站都没有这个仓库）
+//   3. 补一个 BMCLAPI 的 libraries.minecraft.net 镜像，供 com.mojang:* 等库解析
+// 用法： ./gradlew --init-script gradle/china-mirror.init.gradle build
+def officialHost = "maven.neoforged.net"
+def mirrorHost = "maven.creeperhost.net"
+def librariesMirror = "https://bmclapi2.bangbang93.com/libraries"
+
+def localMojangMeta = { baseDir ->
+    new File(baseDir, "local-maven/mojang-meta").toURI().toString()
+}
+
+def redirect = { repos, baseDir ->
+    def metaUrl = localMojangMeta(baseDir)
+    repos.all { repo ->
+        if (repo instanceof MavenArtifactRepository) {
+            def u = repo.url.toString()
+            if (u.contains("${officialHost}/mojang-meta")) {
+                repo.url = metaUrl
+                // 本地替身只有 .pom，没有 Gradle Module Metadata
+                repo.metadataSources { mavenPom() }
+                logger.lifecycle("[china-mirror] ${u} -> ${metaUrl} (本地替身)")
+            } else if (u.contains(officialHost)) {
+                // creeperhost 把官方 /releases 的内容直接挂在根路径下，需要去掉 /releases 段
+                def newUrl = u.replace("${officialHost}/releases", mirrorHost).replace(officialHost, mirrorHost)
+                repo.url = newUrl
+                logger.lifecycle("[china-mirror] ${u} -> ${newUrl}")
+            }
+        }
+    }
+}
+
+settingsEvaluated { settings ->
+    def baseDir = settings.rootDir
+    redirect(settings.pluginManagement.repositories, baseDir)
+    try {
+        redirect(settings.dependencyResolutionManagement.repositories, baseDir)
+    } catch (ignored) {
+    }
+}
+
+allprojects { p ->
+    def baseDir = p.rootProject.projectDir
+    p.repositories.maven {
+        name = "bmclapi-libraries"
+        url = librariesMirror
+    }
+    redirect(p.buildscript.repositories, baseDir)
+    redirect(p.repositories, baseDir)
+    p.afterEvaluate {
+        redirect(p.buildscript.repositories, baseDir)
+        redirect(p.repositories, baseDir)
+    }
+}

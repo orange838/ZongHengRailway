@@ -1,0 +1,8 @@
+{
+  "feature": "zongheng_railway:railway_and_station",
+  "placement": [
+    {
+      "type": "minecraft:in_square"
+    }
+  ]
+}

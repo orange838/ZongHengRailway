@@ -1,0 +1,7 @@
+{
+  "class": "roadbed",
+  "type": "tunnel",
+  "template": "zongheng_railway:railway/tunnel/large_brick_tunnel",
+  "height_offset": 0,
+  "tags": ["default"]
+}
