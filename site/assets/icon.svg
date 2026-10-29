@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ZongHeng Railway">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2b3138"/>
+      <stop offset="100%" stop-color="#15181c"/>
+    </linearGradient>
+    <linearGradient id="rail" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffc078"/>
+      <stop offset="100%" stop-color="#e08f36"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f0a04b" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#f0a04b" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="8" y="8" width="496" height="496" rx="96" fill="url(#bg)"/>
+  <rect x="8" y="8" width="496" height="496" rx="96" fill="none" stroke="#3d444d" stroke-width="6"/>
+  <ellipse cx="256" cy="256" rx="210" ry="210" fill="url(#glow)"/>
+
+  <g transform="rotate(45 256 256)">
+    <!-- sleepers -->
+    <g fill="#4b535d">
+      <rect x="128" y="150" width="256" height="20" rx="8"/>
+      <rect x="128" y="222" width="256" height="20" rx="8"/>
+      <rect x="128" y="294" width="256" height="20" rx="8"/>
+      <rect x="128" y="366" width="256" height="20" rx="8"/>
+    </g>
+    <!-- rails -->
+    <g stroke="url(#rail)" stroke-width="18" stroke-linecap="round">
+      <line x1="190" y1="86" x2="190" y2="426"/>
+      <line x1="322" y1="86" x2="322" y2="426"/>
+    </g>
+    <!-- highlights -->
+    <g stroke="#ffe0b8" stroke-width="5" stroke-linecap="round" opacity="0.55">
+      <line x1="183" y1="100" x2="183" y2="412"/>
+      <line x1="315" y1="100" x2="315" y2="412"/>
+    </g>
+  </g>
+</svg>

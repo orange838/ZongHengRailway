@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZongHeng Railway · 纵横铁路 — 让 Create 自动铺出世界铁路</title>
+<meta name="description" content="ZongHeng Railway（纵横铁路）是 TongDaRailway 的 GPL-3.0 分支，为 Minecraft 1.21.1 / NeoForge 提供 Create 机械动力铁路的自动生成：车站、岔站、桥隧、双线轨道与跨区域路网连通。">
+<link rel="icon" href="assets/icon.svg">
+<link rel="stylesheet" href="style.css">
+<meta property="og:title" content="ZongHeng Railway · 纵横铁路">
+<meta property="og:description" content="让 Create 机械动力自动铺出成网的世界铁路">
+<meta property="og:image" content="assets/icon.svg">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <img src="assets/icon.svg" alt="" width="28" height="28">
+      <span>ZongHeng Railway</span>
+    </a>
+    <nav>
+      <a href="#features">功能</a>
+      <a href="#config">配置</a>
+      <a href="#install">安装</a>
+      <a href="#download">下载</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-inner">
+        <div class="hero-text">
+          <p class="kicker">Minecraft 1.21.1 · NeoForge · Create 附属</p>
+          <h1>ZongHeng Railway<span>纵横铁路</span></h1>
+          <p class="lead">走出出生点，铁路已经在那里了。<br>自动撒站、自动连线、自动架桥钻洞，把整张地图连成一张能坐车走通的路网。</p>
+          <div class="cta">
+            <a class="btn primary" href="#download">下载 1.3.0</a>
+            <a class="btn" href="#features">看看它能做什么</a>
+          </div>
+          <p class="meta">GPL-3.0 · 开源分支 · 服务端 / 客户端均需安装</p>
+        </div>
+        <div class="hero-art">
+          <img src="assets/icon.svg" alt="ZongHeng Railway 图标">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="section">
+    <div class="wrap">
+      <h2>它做什么</h2>
+      <p class="sub">不是随机撒几段铁轨，是按一张真正的路网来规划。</p>
+      <div class="grid">
+        <article class="card">
+          <h3>路网规划</h3>
+          <p>在每个 4096×4096 分区里用低差异序列撒 8~12 个候选站点，做德劳内三角剖分，再剪掉夹角过小（&lt;70°）和度数超过 4 的边，得到一张不会挤成一团的网。</p>
+        </article>
+        <article class="card">
+          <h3>车站与岔站</h3>
+          <p>按节点度数自动选型：只连两条线的站用两出口直线站，连到三条以上的站用四出口岔站。出口方向会自动旋转，挑朝向邻站的那一面。</p>
+        </article>
+        <article class="card">
+          <h3>地形适应</h3>
+          <p>撒点阶段就跳过海洋与河流；连线阶段规划坡度安全的纵断面，坡太陡或跨水需要时自动架桥、钻洞，而不是硬怼一条斜线穿山。</p>
+        </article>
+        <article class="card new">
+          <h3>双线轨道 <em>1.3.0 新增</em></h3>
+          <p>两条平行轨道并排铺设，间距可调（2~8 格，默认 3）。第二条线由整条路径整体平移生成，全程首尾相接，车站出口处以浅弯分岔并入。</p>
+        </article>
+        <article class="card new">
+          <h3>跨区域连通 <em>1.3.0 新增</em></h3>
+          <p>相邻两个分区会在公共边界上取同一个对接点（坐标与高度都由共享种子算出），两边的轨道在边界处头对头接上，路网不再是一块块孤岛。</p>
+        </article>
+        <article class="card">
+          <h3>生成范围可控</h3>
+          <p>可以只在出生点附近按概率生成，也可以打开「全世界生成」让每个分区都有铁路。范围、概率都在配置里改，不用重开存档。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="config" class="section alt">
+    <div class="wrap">
+      <h2>配置</h2>
+      <p class="sub">文件位置：<code>config/zongheng_railway-common.toml</code>。改完重进世界生效。</p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>键</th><th>默认</th><th>说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>generateRailwayEverywhere</code></td><td><code>true</code></td><td>全世界生成。开启时忽略距离上限与概率，每个分区都会生成路网。</td></tr>
+            <tr><td><code>areaGenerationRailwayProbability</code></td><td><code>0.4</code></td><td>未开启全世界生成时，每个分区生成路网的概率（0~1）。</td></tr>
+            <tr><td><code>maxRegionDistance</code></td><td><code>100</code></td><td>未开启全世界生成时，以分区为单位限制生成范围。</td></tr>
+            <tr><td><code>connectAcrossRegions</code></td><td><code>true</code></td><td>跨区域连通。关掉后每个分区各成一张独立的路网。</td></tr>
+            <tr><td><code>doubleTrackEnabled</code></td><td><code>true</code></td><td>双线轨道。关掉就是单线。</td></tr>
+            <tr><td><code>trackSpacing</code></td><td><code>3</code></td><td>双线间距（2~8 格）。窄桥模板是 5 格宽，间距 3 刚好能塞进桥面。</td></tr>
+            <tr><td><code>enableTrackSpawner</code></td><td><code>true</code></td><td>启用轨道生成器相关逻辑。</td></tr>
+            <tr><td><code>generateTrackSpawner</code></td><td><code>true</code></td><td>生成轨道生成器。</td></tr>
+            <tr><td><code>placeTracksUsingTrackSpawner</code></td><td><code>true</code></td><td>用轨道生成器来铺轨。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" class="section">
+    <div class="wrap">
+      <h2>安装</h2>
+      <div class="steps">
+        <div class="step">
+          <span class="num">1</span>
+          <h3>装好前置</h3>
+          <p>Minecraft <strong>1.21.1</strong> + NeoForge <strong>21.1.x</strong>，再装 <strong>Create 6.0.6</strong>。Ponder 与 Flywheel 由 Create 自带，不用单独装。</p>
+        </div>
+        <div class="step">
+          <span class="num">2</span>
+          <h3>放 jar</h3>
+          <p>把 <code>zongheng_railway-1.3.0+mc21.1.jar</code> 放进 <code>mods/</code>。客户端和服务端都要放。</p>
+        </div>
+        <div class="step">
+          <span class="num">3</span>
+          <h3>进世界</h3>
+          <p>新世界会在区块生成时自动铺轨；旧世界只影响之后新生成的区块。找车站可以用 <code>/zongheng_railway searchstation</code>，加 <code>large</code> / <code>small</code> 只找大站或小站。</p>
+        </div>
+      </div>
+      <div class="note">
+        <strong>和上游能不能一起装？</strong>
+        <p>不能。<code>mod id</code> 不一样（<code>zongheng_railway</code>），但同时装会出现两套一模一样的路网互相重叠，请只保留一个。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="download" class="section alt">
+    <div class="wrap">
+      <h2>下载</h2>
+      <p class="sub">当前版本 1.3.0 · 对应 Minecraft 1.21.1 · NeoForge 21.1.x</p>
+      <div class="links">
+        <a class="link-card" href="https://github.com/orange838/ZongHengRailway/releases" target="_blank" rel="noopener">
+          <strong>GitHub Releases</strong>
+          <span>源码与 jar 都在这里，提 issue 也在这</span>
+        </a>
+        <a class="link-card" href="https://modrinth.com/project/zongheng-railway" target="_blank" rel="noopener">
+          <strong>Modrinth</strong>
+          <span>支持一键安装到整合包</span>
+        </a>
+        <a class="link-card" href="https://www.curseforge.com/minecraft/mc-mods/zongheng-railway" target="_blank" rel="noopener">
+          <strong>CurseForge</strong>
+          <span>CurseForge 客户端可订阅</span>
+        </a>
+        <a class="link-card" href="https://search.mcmod.cn/s?key=%E7%BA%B5%E6%A8%AA%E9%93%81%E8%B7%AF" target="_blank" rel="noopener">
+          <strong>MC百科</strong>
+          <span>中文资料与教程</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <h2>关于这个分支</h2>
+      <p class="origin">
+        ZongHeng Railway 是 <a href="https://github.com/Hello-LuckyHuang/TongDaRailway" target="_blank" rel="noopener">TongDaRailway</a> 的非官方分支，
+        在原版基础上做了改名、加回「全世界生成铁路」开关，并新增双线轨道与跨区域连通。
+        原项目作者：hello_luckyhuang、MarbleGate、MagicalChao。
+      </p>
+      <p class="origin">
+        以 <strong>GPL-3.0</strong> 许可发布，与上游保持同一许可证。
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>ZongHeng Railway · 纵横铁路 · GPL-3.0</p>
+    <p class="tiny">本站文案由 AI 辅助生成，技术内容已对照源码校核。</p>
+  </div>
+</footer>
+
+</body>
+</html>
