@@ -28,6 +28,23 @@ public class Config {
                     "One region is 4096 blocks, so 100 means a 409600 block radius.")
             .defineInRange("maxRegionDistance", 100, 0, 100000);
 
+    private static final ModConfigSpec.BooleanValue CONNECT_ACROSS_REGIONS = BUILDER
+            .comment("Connect the railway networks of neighbouring regions at their shared border.",
+                    "跨区连通：相邻两个区域的路网在公共边界处对接，默认开启。")
+            .define("connectAcrossRegions", true);
+
+    private static final ModConfigSpec.BooleanValue DOUBLE_TRACK = BUILDER
+            .comment("Generate two parallel tracks instead of a single centre line.",
+                    "false = keep the original single track.",
+                    "true  = lay two tracks spaced by trackSpacing blocks.")
+            .define("doubleTrackEnabled", true);
+
+    private static final ModConfigSpec.IntValue TRACK_SPACING = BUILDER
+            .comment("Only used when doubleTrackEnabled is true.",
+                    "Distance in blocks between the two parallel tracks.",
+                    "3 keeps both tracks inside the narrow bridge templates.")
+            .defineInRange("trackSpacing", 3, 2, 8);
+
     private static final ModConfigSpec.BooleanValue ENABLE_TRACK_SPAWNER = BUILDER
             .comment("Can the track spawner work")
             .define("enableTrackSpawner", true);
@@ -45,6 +62,9 @@ public class Config {
     public static boolean generateRailwayEverywhere;
     public static double areaGenRailwayProbability;
     public static int maxRegionDistance;
+    public static boolean connectAcrossRegions;
+    public static boolean doubleTrackEnabled;
+    public static int trackSpacing;
     public static boolean enableTrackSpawner;
     public static boolean generateTrackSpawner;
     public static boolean useTrackSpawnerPlaceTrack;
@@ -54,6 +74,9 @@ public class Config {
         generateRailwayEverywhere = GENERATE_RAILWAY_EVERYWHERE.get();
         areaGenRailwayProbability = AREA_GEN_RAILWAY_PROBABILITY.get();
         maxRegionDistance = MAX_REGION_DISTANCE.get();
+        connectAcrossRegions = CONNECT_ACROSS_REGIONS.get();
+        doubleTrackEnabled = DOUBLE_TRACK.get();
+        trackSpacing = TRACK_SPACING.get();
         enableTrackSpawner = ENABLE_TRACK_SPAWNER.get();
         generateTrackSpawner = GENERATE_TRACK_SPAWNER.get();
         useTrackSpawnerPlaceTrack = PLACE_TRACKS_USING_TRACK_SPAWNER.get();

@@ -1,15 +1,26 @@
 // 国内网络下 NeoForge 官方 maven（maven.neoforged.net）常被 DNS 污染 / 连接超时。
 // 这里做三件事：
-//   1. releases 仓库 -> creeperhost（NeoForged 官方给出的备用镜像）
-//   2. mojang-meta 仓库 -> 本地替身 local-maven/mojang-meta（镜像站都没有这个仓库）
+//   1. releases 仓库 -> BMCLAPI（国内速度快），缺失的工件再回落到 creeperhost（NeoForged 官方备用镜像）
+//   2. mojang-meta 仓库 -> 本地替身 local-maven/mojang-meta（各镜像站都没有这个仓库）
 //   3. 补一个 BMCLAPI 的 libraries.minecraft.net 镜像，供 com.mojang:* 等库解析
 // 用法： ./gradlew --init-script gradle/china-mirror.init.gradle build
 def officialHost = "maven.neoforged.net"
-def mirrorHost = "maven.creeperhost.net"
+def bmclapiReleases = "https://bmclapi2.bangbang93.com/maven"
+def creeperHost = "https://maven.creeperhost.net"
 def librariesMirror = "https://bmclapi2.bangbang93.com/libraries"
 
 def localMojangMeta = { baseDir ->
     new File(baseDir, "local-maven/mojang-meta").toURI().toString()
+}
+
+def addFallbackRepo = { repos ->
+    boolean present = repos.any { it instanceof MavenArtifactRepository && it.url.toString().contains("creeperhost") }
+    if (!present) {
+        repos.maven {
+            name = "creeperhost-fallback"
+            url = creeperHost
+        }
+    }
 }
 
 def redirect = { repos, baseDir ->
@@ -23,13 +34,14 @@ def redirect = { repos, baseDir ->
                 repo.metadataSources { mavenPom() }
                 logger.lifecycle("[china-mirror] ${u} -> ${metaUrl} (本地替身)")
             } else if (u.contains(officialHost)) {
-                // creeperhost 把官方 /releases 的内容直接挂在根路径下，需要去掉 /releases 段
-                def newUrl = u.replace("${officialHost}/releases", mirrorHost).replace(officialHost, mirrorHost)
+                // BMCLAPI 的 /maven 对应官方的 /releases
+                def newUrl = u.replace("https://${officialHost}/releases", bmclapiReleases).replace("https://${officialHost}", bmclapiReleases).replace("${officialHost}/releases", bmclapiReleases).replace(officialHost, bmclapiReleases)
                 repo.url = newUrl
                 logger.lifecycle("[china-mirror] ${u} -> ${newUrl}")
             }
         }
     }
+    addFallbackRepo(repos)
 }
 
 settingsEvaluated { settings ->

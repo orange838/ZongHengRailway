@@ -49,6 +49,30 @@ public class StationPlanner {
             long seed,
             RailwayBuilder builder
     ) {
+        return buildPlan(regionPos, level, seed, builder).stations();
+    }
+
+    /** 区域规划结果：车站列表 + 跨区对接点。 */
+    public record RegionPlan(
+            List<Pair<StationGenInfo, List<BlockPos>>> stations,
+            List<BorderPortal> portals
+    ) {
+    }
+
+    /** 跨区对接点：位于区域边界上的轨道对接点，相邻两个区域会算出同一个坐标与高度。 */
+    public record BorderPortal(
+            BlockPos pos,
+            Vec3 inwardDir,
+            int nodeIndex
+    ) {
+    }
+
+    public static RegionPlan buildPlan(
+            RegionPos regionPos,
+            ServerLevel level,
+            long seed,
+            RailwayBuilder builder
+    ) {
         ChunkGenerator gen = level.getChunkSource().getGenerator();
         RandomState cfg = level.getChunkSource().randomState();
 
@@ -60,10 +84,10 @@ public class StationPlanner {
         if (!Config.generateRailwayEverywhere) {
             if (Math.abs(regionPos.x()) > Config.maxRegionDistance || Math.abs(regionPos.z()) > Config.maxRegionDistance) {
                 // 过远不生成
-                return result;
+                return new RegionPlan(result, List.of());
             }
             if (new Random(regionSeed).nextDouble() < 1 - Config.areaGenRailwayProbability) {
-                return result;
+                return new RegionPlan(result, List.of());
             }
         }
 
@@ -90,6 +114,13 @@ public class StationPlanner {
                 ? null
                 : StationElevationPlanner.plan(nodes, builder, level);
 
+        // 跨区对接点：每条边界一个，相邻两区算出同一个点，两边的轨道在边界处头对头接上
+        List<BorderPortal> portals = planPortals(regionPos, level, builder, nodes);
+        Map<Integer, List<BlockPos>> portalByNode = new HashMap<>();
+        for (BorderPortal portal : portals) {
+            portalByNode.computeIfAbsent(portal.nodeIndex(), k -> new ArrayList<>()).add(portal.pos());
+        }
+
         for (int nodeIndex = 0; nodeIndex < nodes.size(); nodeIndex++) {
             RouteGraph.NodeData node = nodes.get(nodeIndex);
             StationElevationPlanner.StationElevation elevation = elevations == null
@@ -101,7 +132,8 @@ public class StationPlanner {
             node.setPointY(h);
 
             // 根据高度决定生成地上还是地下车站
-            int exitNum = node.connected.size() >= 3 ? 4 : 2;
+            boolean hasPortal = portalByNode.containsKey(nodeIndex);
+            int exitNum = (node.connected.size() >= 3 || hasPortal) ? 4 : 2;
             StationTemplate station;
             long stationSeed = regionSeed + x* 3L + z* 7L;
             if (elevation != null && elevation.underground()) {
@@ -112,9 +144,10 @@ public class StationPlanner {
 
             int finalH = h;
             BlockPos placePos = new BlockPos(x, h, z);
-            List<BlockPos> connectedStations = node.connected.stream()
+            List<BlockPos> connectedStations = new ArrayList<>(node.connected.stream()
                     .map(p -> new BlockPos((int) p.x, finalH, (int) p.z))
-                    .toList();
+                    .toList());
+            connectedStations.addAll(portalByNode.getOrDefault(nodeIndex, List.of()));
             if (exitNum == 2) {
                 station = selectExitRotation(station, placePos, connectedStations);
             }
@@ -124,7 +157,81 @@ public class StationPlanner {
             ));
         }
 
-        return result;
+        return new RegionPlan(result, portals);
+    }
+
+    // 跨区对接点规划
+    private static List<BorderPortal> planPortals(
+            RegionPos regionPos,
+            ServerLevel level,
+            RailwayBuilder builder,
+            List<RouteGraph.NodeData> nodes
+    ) {
+        List<BorderPortal> portals = new ArrayList<>();
+        if (!Config.connectAcrossRegions || builder == null || nodes.isEmpty()) {
+            return portals;
+        }
+        int length = regionPos.getLength();
+        int baseX = (int) regionPos.getBasePos().x;
+        int baseZ = (int) regionPos.getBasePos().y;
+
+        for (int side = 0; side < 4; side++) {
+            boolean vertical = side < 2;
+            int edgeIndex = vertical
+                    ? (side == 0 ? regionPos.x() : regionPos.x() + 1)
+                    : (side == 2 ? regionPos.z() : regionPos.z() + 1);
+            int axis = vertical ? 0 : 1;
+            int along = vertical ? regionPos.z() : regionPos.x();
+            Random random = new Random(seedOfEdge(edgeIndex, along, axis));
+
+            int margin = Math.min(200, Math.max(1, length / 8));
+            int t = margin + random.nextInt(Math.max(1, length - margin * 2));
+
+            int x;
+            int z;
+            Vec3 inward;
+            if (vertical) {
+                x = side == 0 ? baseX : baseX + length;
+                z = baseZ + t;
+                inward = new Vec3(side == 0 ? 1 : -1, 0, 0);
+            } else {
+                x = baseX + t;
+                z = side == 2 ? baseZ : baseZ + length;
+                inward = new Vec3(0, 0, side == 2 ? 1 : -1);
+            }
+
+            int y = Math.max(builder.getExactHeight(level, x, z), level.getSeaLevel() + 2);
+            int nodeIndex = nearestNode(nodes, x, z);
+            if (nodeIndex < 0) {
+                continue;
+            }
+            portals.add(new BorderPortal(new BlockPos(x, y, z), inward, nodeIndex));
+        }
+        return portals;
+    }
+
+    private static int nearestNode(List<RouteGraph.NodeData> nodes, int x, int z) {
+        int best = -1;
+        double bestDist = Double.MAX_VALUE;
+        for (int i = 0; i < nodes.size(); i++) {
+            RouteGraph.NodeData node = nodes.get(i);
+            double dx = node.point.x - x;
+            double dz = node.point.z - z;
+            double dist = dx * dx + dz * dz;
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = i;
+            }
+        }
+        return best;
+    }
+
+    private static long seedOfEdge(int edgeIndex, int along, int axis) {
+        long h = 1125899906842597L;
+        h = h * 31 + edgeIndex;
+        h = h * 31 + along;
+        h = h * 31 + axis;
+        return h;
     }
 
     // 路线连接规则生成
@@ -132,7 +239,8 @@ public class StationPlanner {
         List<ConnectionGenInfo> result = new ArrayList<>();
         Map<Integer, List<StationTemplate.Exit>> connect = new HashMap<>();
 
-        List<Pair<StationGenInfo, List<BlockPos>>> thisStations = generateStation(regionPos, level, seed);
+        RegionPlan plan = buildPlan(regionPos, level, seed, RailwayBuilder.getInstance(seed));
+        List<Pair<StationGenInfo, List<BlockPos>>> thisStations = plan.stations();
 
         for (Pair<StationGenInfo, List<BlockPos>> stationGen : thisStations) {
             var station = stationGen.getFirst();
@@ -149,6 +257,17 @@ public class StationPlanner {
 //            var tpos = station.placePos;
 //            int exitnum = matching.size();
 //            ZongHengRailway.LOGGER.info("====> StationPlanner: {} {} {} {}, exit {}, rotation {}", tpos.getX(), tpos.getY(), tpos.getZ(), regionPos, exitnum, station.stationTemplate.rotation);
+        }
+
+        // 跨区对接点：作为虚拟出口参与配对，使相邻区域的路网在边界处连通
+        for (BorderPortal portal : plan.portals()) {
+            StationGenInfo station = plan.stations().get(portal.nodeIndex()).getFirst();
+            int id = generateLineId(
+                    station.placePos().getX(), station.placePos().getZ(),
+                    portal.pos().getX(), portal.pos().getZ()
+            );
+            connect.computeIfAbsent(id, k -> new ArrayList<>())
+                    .add(new StationTemplate.Exit(portal.pos(), portal.inwardDir()));
         }
 
         connect.forEach((id, con) -> {
@@ -349,17 +468,22 @@ public class StationPlanner {
     }
 
     private static int generateLineId(double x1, double y1, double x2, double y2) {
-        double A = y2 - y1;
-        double B = x1 - x2;
-        double C = x2 * y1 - x1 * y2;
-
-        if (A < 0 || (A == 0 && B < 0)) {
-            A = -A;
-            B = -B;
-            C = -C;
+        // 无向点对 id：旧实现用两点确定的直线 (A,B,C) 作 key，
+        // 三点共线时不同边会撞同一个 id，导致 con.size() != 2 而被整条丢弃。
+        int ax = (int) Math.round(x1), az = (int) Math.round(y1);
+        int bx = (int) Math.round(x2), bz = (int) Math.round(y2);
+        if (ax > bx || (ax == bx && az > bz)) {
+            int tx = ax; ax = bx; bx = tx;
+            int tz = az; az = bz; bz = tz;
         }
-
-        return String.format("(%f,%f,%f)", A, B, C).hashCode();
+        long h = (long) ax * 0x9E3779B1L
+                ^ (long) az * 0x85EBCA77L
+                ^ (long) bx * 0xC2B2AE3DL
+                ^ (long) bz * 0x27D4EB2FL;
+        h ^= (h >>> 29);
+        h *= 0x165667B19E3779F9L;
+        h ^= (h >>> 32);
+        return (int) h;
     }
 
     // 站点放置信息(世界坐标系)

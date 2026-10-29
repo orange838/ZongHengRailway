@@ -55,6 +55,19 @@ public class CurveRoute {
         return segments.get(index);
     }
 
+    public int getSegmentCount() {
+        return segments.size();
+    }
+
+    /** 批量追加片段，只重建一次采样点（逐条 addSegment 会反复重建，代价是 O(n^2)）。 */
+    public void addSegments(List<CurveSegment> more) {
+        if (more == null || more.isEmpty()) {
+            return;
+        }
+        segments.addAll(more);
+        buildSamplePoints();
+    }
+
     public double getTotalLength() {
         return totalLength;
     }

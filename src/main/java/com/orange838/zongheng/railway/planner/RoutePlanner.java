@@ -1,5 +1,6 @@
 package com.orange838.zongheng.railway.planner;
 
+import com.orange838.zongheng.Config;
 import com.orange838.zongheng.ZongHengRailway;
 import com.orange838.zongheng.railway.RailwayBuilder;
 import com.orange838.zongheng.structure.TrackPutInfo;
@@ -22,7 +23,42 @@ public class RoutePlanner {
      */
     public ResultWay getWay(RailwayBuilder builder, List<int[]> way, StationPlanner.ConnectionGenInfo connectionGenInfo, ServerLevel level) {
         List<int[]> handledHeightWay = handleHeight(builder, way, level, connectionGenInfo);
-        return connectTrackNew4(handledHeightWay, connectionGenInfo);
+        ResultWay result = connectTrackNew4(handledHeightWay, connectionGenInfo);
+        if (result != null && Config.doubleTrackEnabled) {
+            int half = Math.max(1, Config.trackSpacing / 2);
+            int[] shift = lateralShift(handledHeightWay, half);
+            if (shift != null) {
+                ResultWay second = connectTrackNew4(handledHeightWay, connectionGenInfo, shift[0], shift[1]);
+                if (second != null) {
+                    result = result.merge(second);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 按整条路径的总体走向求水平法线，返回把路径整体平移 distance 格所需的 (dx, dz)。
+     * 平移量对整条路径是常量，因此偏移出来的第二条线天然首尾相接。
+     */
+    private static int[] lateralShift(List<int[]> path, int distance) {
+        if (path == null || path.size() < 2) {
+            return null;
+        }
+        int[] first = path.get(0);
+        int[] last = path.get(path.size() - 1);
+        double dx = last[0] - first[0];
+        double dz = last[1] - first[1];
+        double len = Math.sqrt(dx * dx + dz * dz);
+        if (len < 1e-6) {
+            return null;
+        }
+        int ox = (int) Math.round(-dz / len * distance);
+        int oz = (int) Math.round(dx / len * distance);
+        if (ox == 0 && oz == 0) {
+            return null;
+        }
+        return new int[]{ox, oz};
     }
 
     /**
@@ -91,25 +127,38 @@ public class RoutePlanner {
      * @return 连接后的复合曲线
      */
     private ResultWay connectTrackNew4(List<int[]> path, StationPlanner.ConnectionGenInfo con) {
+        return connectTrackNew4(path, con, 0, 0);
+    }
+
+    /**
+     * @param offsetX 双线第二条轨道相对中心线的整体水平平移量
+     * @param offsetZ 同上
+     */
+    private ResultWay connectTrackNew4(List<int[]> path, StationPlanner.ConnectionGenInfo con, int offsetX, int offsetZ) {
         if (path == null)
             return null;
         // 转换为世界坐标系
         List<Vec3> path1 = new ArrayList<>();
         for (int[] point : path) {
-            path1.add(new Vec3(point[0], point[2], point[1]));
+            path1.add(new Vec3(point[0] + offsetX, point[2], point[1] + offsetZ));
         }
 
         // 连接线路和车站
         ResultWay result = new ResultWay(new CurveRoute(), new ArrayList<>());
 
         // 车站起点连接
-        Vec3 pA = con.start().add(con.startDir().scale(30));
+        Vec3 pA = con.start().add(con.startDir().scale(30)).add(offsetX, 0, offsetZ);
         path1.addFirst(pA);
 
-        Vec3 pB = con.end().add(con.endDir().scale(30));
+        Vec3 pB = con.end().add(con.endDir().scale(30)).add(offsetX, 0, offsetZ);
         path1.addLast(pB);
 
-        result.addLine(con.start(), pA);
+        if (offsetX == 0 && offsetZ == 0) {
+            result.addLine(con.start(), pA);
+        } else {
+            // 第二条轨道在车站出口处分岔，用一段浅弯接上偏移后的直段
+            result.addBezier(con.start(), con.startDir(), pA.subtract(con.start()), con.startDir().reverse());
+        }
 
         Vec3 startDir = con.startDir();
         Vec3 endDir;
@@ -164,7 +213,11 @@ public class RoutePlanner {
         }
 
         // 终点车站连接
-        result.addLine(pB, con.end());
+        if (offsetX == 0 && offsetZ == 0) {
+            result.addLine(pB, con.end());
+        } else {
+            result.addBezier(pB, con.endDir().reverse(), con.end().subtract(pB), con.endDir());
+        }
 
         return result;
     }
@@ -357,6 +410,18 @@ public class RoutePlanner {
                     end2Extent
             );
         }
+        /** 把另一条轨道的轨道块与路基曲线并入本结果。 */
+        public ResultWay merge(ResultWay other) {
+            List<TrackPutInfo> all = new ArrayList<>(trackPutInfos);
+            all.addAll(other.trackPutInfos);
+            List<CurveRoute.CurveSegment> segments = new ArrayList<>();
+            for (int i = 0; i < other.way.getSegmentCount(); i++) {
+                segments.add(other.way.getSegment(i));
+            }
+            way.addSegments(segments);
+            return new ResultWay(way, all);
+        }
+
         public void addLine(Vec3 start, Vec3 end) {
             way.addSegment(new CurveRoute.LineSegment(start, end));
             int n = Math.max((int) Math.abs(start.x - end.x), (int) Math.abs(start.z - end.z));
