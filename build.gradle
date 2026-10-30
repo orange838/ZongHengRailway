@@ -13,6 +13,7 @@ repositories {
 
     maven { url = "https://maven.createmod.net" } // Create, Ponder, Flywheel
     maven { url = "https://maven.ithundxr.dev/snapshots" } // Registrate
+    maven { url = "https://maven.shedaniel.me" } // Cloth Config (in-game config screen)
 }
 
 base {
@@ -103,6 +104,11 @@ dependencies {
     compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}")
     runtimeOnly("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")
+
+    // Cloth Config: only used for the in-game config screen. Optional at runtime so the mod keeps
+    // working (with the plain toml file) when a player does not have it installed.
+    compileOnly("me.shedaniel.cloth:cloth-config-neoforge:${cloth_config_version}")
+    runtimeOnly("me.shedaniel.cloth:cloth-config-neoforge:${cloth_config_version}")
 
     // Example mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime

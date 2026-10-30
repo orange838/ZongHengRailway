@@ -20,11 +20,18 @@
 | `generateRailwayEverywhere` | `true` | 总开关。`true` 时**每个铁路区域都会生成路网**，忽略下面的概率与距离上限（恢复 1.1.0 之前的行为）；`false` 时按原版规则受限生成 |
 | `areaGenerationRailwayProbability` | `0.4` | 仅在总开关为 `false` 时生效。单个区域生成铁路的概率，0 表示永不生成，1 表示总是生成 |
 | `maxRegionDistance` | `100` | 仅在总开关为 `false` 时生效。距世界原点多远的区域仍会生成铁路（单位：区域，1 区域 = 4096 格，100 约等于 40 万格半径） |
+| `connectAcrossRegions` | `true` | 相邻区域之间的路网是否互相连通。`true` 时跨区域会补线把两边的路网接起来，`false` 时每个区域各自成网 |
+| `doubleTrackEnabled` | `true` | 双线轨道开关。`true` 时每段线路铺两条平行轨道（一往一返），`false` 时退回原来的单线 |
+| `trackSpacing` | `3` | 仅在双线开启时生效。两条轨道中心线之间的间距，取值 2–8 格 |
 | `enableTrackSpawner` | `true` | 铁轨生成器方块是否能工作 |
 | `generateTrackSpawner` | `true` | 是否生成铁轨生成器方块 |
 | `placeTracksUsingTrackSpawner` | `true` | 用铁轨生成器（true）还是在世界生成阶段直接铺轨（false） |
 
-配置文件位于 `.minecraft/config/zongheng_railway-common.toml`，**改完需要重开世界或重启游戏**。
+配置文件位于 `.minecraft/config/zongheng_railway-common.toml`。**改完即时生效**，不需要重开世界或重启游戏：
+
+- 装了 [Cloth Config](https://modrinth.com/mod/cloth-config) 时，进游戏在 **模组列表 → 纵横铁路 → 配置** 里点开图形界面改，保存后马上生效；
+- 没装 Cloth Config 时直接编辑上面那个 toml 文件即可（游戏内不提供图形界面，其余功能不受影响）。
+
 注意：开关只影响**尚未生成**的区域，已生成区块里的路网结果会被存档数据固定下来。
 
 ## 路线生成算法（原文，1.1.0）
@@ -51,6 +58,9 @@
 ```
 
 产物在 `build/libs/zongheng_railway-<version>.jar`。
+
+`local-maven/` 里是 `gradle/china-mirror.init.gradle` 用的本地 Maven 替身（Mojang 元数据 pom），
+只有 1 个几 KB 的文件，用于国内网络下绕开连不上的仓库，**请勿删除**。
 
 ## 许可
 

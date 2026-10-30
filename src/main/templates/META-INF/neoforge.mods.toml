@@ -63,6 +63,15 @@ versionRange = "${neo_version_range}" #mandatory
 ordering = "NONE"
 # Side this dependency is applied on - BOTH, CLIENT, or SERVER
 side = "BOTH"
+# 可选的图形配置界面依赖。Cloth Config 不在时模组照常运行，只缺少游戏内配置界面，
+# 仍然可以通过 config/zongheng_railway-common.toml 修改配置。
+[[dependencies."${mod_id}"]]
+modId = "cloth_config"
+type = "optional"
+versionRange = "[15.0,)"
+ordering = "AFTER"
+side = "CLIENT"
+
 # Here's another dependency
 [[dependencies."${mod_id}"]]
 modId = "minecraft"

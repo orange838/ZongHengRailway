@@ -16,6 +16,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import org.slf4j.Logger;
@@ -52,6 +53,12 @@ public class ZongHengRailway {
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+
+        // 游戏内配置界面：只在客户端尝试注册，Cloth Config 不在时安全跳过。
+        // 先做资源探测再加载界面类，避免在缺少 Cloth 时解析到不存在的类。
+        if (FMLEnvironment.dist.isClient()) {
+            com.orange838.zongheng.client.ConfigScreens.tryRegisterClient(modContainer);
+        }
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
@@ -85,6 +92,7 @@ public class ZongHengRailway {
                 // 注册方块实体渲染器
                 BlockEntityRenderers.register(ModBlockEntities.TRACK_SPAWNER.get(), TrackSpawnerBlockRenderer::new);
             });
+
         }
     }
 }

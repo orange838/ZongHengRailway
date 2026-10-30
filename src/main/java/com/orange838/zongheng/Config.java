@@ -11,53 +11,53 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    private static final ModConfigSpec.BooleanValue GENERATE_RAILWAY_EVERYWHERE = BUILDER
+    public static final ModConfigSpec.BooleanValue GENERATE_RAILWAY_EVERYWHERE = BUILDER
             .comment("Master switch for full-world generation.",
                     "true  = every railway region generates a network (restores the pre-1.1.0 behaviour).",
                     "false = regions are gated by areaGenerationRailwayProbability and maxRegionDistance.")
             .define("generateRailwayEverywhere", true);
 
-    private static final ModConfigSpec.DoubleValue AREA_GEN_RAILWAY_PROBABILITY = BUILDER
+    public static final ModConfigSpec.DoubleValue AREA_GEN_RAILWAY_PROBABILITY = BUILDER
             .comment("Only used when generateRailwayEverywhere is false.",
                     "The probability of generating a railway in a region. 0 means never generate, 1 means always generate.")
             .defineInRange("areaGenerationRailwayProbability", 0.4, 0, 1);
 
-    private static final ModConfigSpec.IntValue MAX_REGION_DISTANCE = BUILDER
+    public static final ModConfigSpec.IntValue MAX_REGION_DISTANCE = BUILDER
             .comment("Only used when generateRailwayEverywhere is false.",
                     "How many regions away from the world origin may still generate railways.",
                     "One region is 4096 blocks, so 100 means a 409600 block radius.")
             .defineInRange("maxRegionDistance", 100, 0, 100000);
 
-    private static final ModConfigSpec.BooleanValue CONNECT_ACROSS_REGIONS = BUILDER
+    public static final ModConfigSpec.BooleanValue CONNECT_ACROSS_REGIONS = BUILDER
             .comment("Connect the railway networks of neighbouring regions at their shared border.",
                     "跨区连通：相邻两个区域的路网在公共边界处对接，默认开启。")
             .define("connectAcrossRegions", true);
 
-    private static final ModConfigSpec.BooleanValue DOUBLE_TRACK = BUILDER
+    public static final ModConfigSpec.BooleanValue DOUBLE_TRACK = BUILDER
             .comment("Generate two parallel tracks instead of a single centre line.",
                     "false = keep the original single track.",
                     "true  = lay two tracks spaced by trackSpacing blocks.")
             .define("doubleTrackEnabled", true);
 
-    private static final ModConfigSpec.IntValue TRACK_SPACING = BUILDER
+    public static final ModConfigSpec.IntValue TRACK_SPACING = BUILDER
             .comment("Only used when doubleTrackEnabled is true.",
                     "Distance in blocks between the two parallel tracks.",
                     "3 keeps both tracks inside the narrow bridge templates.")
             .defineInRange("trackSpacing", 3, 2, 8);
 
-    private static final ModConfigSpec.BooleanValue ENABLE_TRACK_SPAWNER = BUILDER
+    public static final ModConfigSpec.BooleanValue ENABLE_TRACK_SPAWNER = BUILDER
             .comment("Can the track spawner work")
             .define("enableTrackSpawner", true);
 
-    private static final ModConfigSpec.BooleanValue GENERATE_TRACK_SPAWNER = BUILDER
+    public static final ModConfigSpec.BooleanValue GENERATE_TRACK_SPAWNER = BUILDER
             .comment("Can the track spawner be generated")
             .define("generateTrackSpawner", true);
 
-    private static final ModConfigSpec.BooleanValue PLACE_TRACKS_USING_TRACK_SPAWNER = BUILDER
+    public static final ModConfigSpec.BooleanValue PLACE_TRACKS_USING_TRACK_SPAWNER = BUILDER
             .comment("Use the track spawner,(true) or place rails during world generation.(false)")
             .define("placeTracksUsingTrackSpawner", true);
 
-    static final ModConfigSpec SPEC = BUILDER.build();
+    public static final ModConfigSpec SPEC = BUILDER.build();
 
     public static boolean generateRailwayEverywhere;
     public static double areaGenRailwayProbability;
@@ -69,8 +69,24 @@ public class Config {
     public static boolean generateTrackSpawner;
     public static boolean useTrackSpawnerPlaceTrack;
 
-    @SubscribeEvent
-    static void onLoad(final ModConfigEvent event) {
+    /**
+     * 把当前值写回配置文件，并立即重新应用一次。
+     *
+     * <p>供游戏内配置界面在点「保存并退出」时调用：先算好各配置项的新值（尚未写入静态字段），
+     * 再保存文件，最后统一刷新一次静态字段，避免读到半旧半新的状态。
+     */
+    public static void saveAndReload() {
+        try {
+            SPEC.save();
+        } catch (Exception e) {
+            ZongHengRailway.LOGGER.error("Failed to save the ZongHeng Railway config file", e);
+            return;
+        }
+        applyValues();
+    }
+
+    /** 把 SPEC 里的当前值同步到静态字段，世界生成代码只读这些字段。 */
+    private static void applyValues() {
         generateRailwayEverywhere = GENERATE_RAILWAY_EVERYWHERE.get();
         areaGenRailwayProbability = AREA_GEN_RAILWAY_PROBABILITY.get();
         maxRegionDistance = MAX_REGION_DISTANCE.get();
@@ -80,5 +96,10 @@ public class Config {
         enableTrackSpawner = ENABLE_TRACK_SPAWNER.get();
         generateTrackSpawner = GENERATE_TRACK_SPAWNER.get();
         useTrackSpawnerPlaceTrack = PLACE_TRACKS_USING_TRACK_SPAWNER.get();
+    }
+
+    @SubscribeEvent
+    static void onLoad(final ModConfigEvent event) {
+        applyValues();
     }
 }
