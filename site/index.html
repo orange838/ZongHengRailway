@@ -38,7 +38,7 @@
           <h1>ZongHeng Railway<span>纵横铁路</span></h1>
           <p class="lead">走出出生点，铁路已经在那里了。<br>自动撒站、自动连线、自动架桥钻洞，把整张地图连成一张能坐车走通的路网。</p>
           <div class="cta">
-            <a class="btn primary" href="#download">下载 1.3.0</a>
+            <a class="btn primary" href="#download">下载 1.3.2</a>
             <a class="btn" href="#features">看看它能做什么</a>
           </div>
           <p class="meta">GPL-3.0 · 开源分支 · 服务端 / 客户端均需安装</p>
@@ -75,6 +75,10 @@
           <h3>跨区域连通 <em>1.3.0 新增</em></h3>
           <p>相邻两个分区会在公共边界上取同一个对接点（坐标与高度都由共享种子算出），两边的轨道在边界处头对头接上，路网不再是一块块孤岛。</p>
         </article>
+        <article class="card new">
+          <h3>预热周边区域 <em>1.3.2 新增</em></h3>
+          <p>进入一个分区时，顺手把周围一圈分区的路网提前算好。传到远方一个从没去过的地方，那儿也已经有铁路和车站，不用等规划卡顿。</p>
+        </article>
         <article class="card">
           <h3>生成范围可控</h3>
           <p>可以只在出生点附近按概率生成，也可以打开「全世界生成」让每个分区都有铁路。范围、概率都在配置里改，不用重开存档。</p>
@@ -102,6 +106,9 @@
             <tr><td><code>enableTrackSpawner</code></td><td><code>true</code></td><td>启用轨道生成器相关逻辑。</td></tr>
             <tr><td><code>generateTrackSpawner</code></td><td><code>true</code></td><td>生成轨道生成器。</td></tr>
             <tr><td><code>placeTracksUsingTrackSpawner</code></td><td><code>true</code></td><td>用轨道生成器来铺轨。</td></tr>
+            <tr><td><code>preheatAroundPlayer</code></td><td><code>true</code></td><td>预热周边区域。进入新分区时提前规划周围一圈分区，1.3.2 新增。</td></tr>
+            <tr><td><code>preheatRadius</code></td><td><code>1</code></td><td>提前规划周围几圈分区（0~3）。<code>1</code> 表示 3×3 个分区，即 12288×12288 格。</td></tr>
+            <tr><td><code>planTimeoutSeconds</code></td><td><code>60</code></td><td>区块生成等待规划的最长秒数，超时后先正常生成。0 表示一直等。</td></tr>
           </tbody>
         </table>
       </div>
@@ -120,7 +127,7 @@
         <div class="step">
           <span class="num">2</span>
           <h3>放 jar</h3>
-          <p>把 <code>zongheng_railway-1.3.0+mc21.1.jar</code> 放进 <code>mods/</code>。客户端和服务端都要放。</p>
+          <p>把 <code>zongheng_railway-1.3.2+mc21.1.jar</code> 放进 <code>mods/</code>。客户端和服务端都要放。</p>
         </div>
         <div class="step">
           <span class="num">3</span>
@@ -138,7 +145,7 @@
   <section id="download" class="section alt">
     <div class="wrap">
       <h2>下载</h2>
-      <p class="sub">当前版本 1.3.0 · 对应 Minecraft 1.21.1 · NeoForge 21.1.x</p>
+      <p class="sub">当前版本 1.3.2 · 对应 Minecraft 1.21.1 · NeoForge 21.1.x</p>
       <div class="links">
         <a class="link-card" href="https://github.com/orange838/ZongHengRailway/releases" target="_blank" rel="noopener">
           <strong>GitHub Releases</strong>
