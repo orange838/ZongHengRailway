@@ -68,12 +68,16 @@
           <p>撒点阶段就跳过海洋与河流；连线阶段规划坡度安全的纵断面，坡太陡或跨水需要时自动架桥、钻洞，而不是硬怼一条斜线穿山。</p>
         </article>
         <article class="card new">
-          <h3>双线轨道 <em>1.3.2 新增</em></h3>
+          <h3>双线轨道 <em>1.3.0 新增</em></h3>
           <p>两条平行轨道并排铺设，间距可调（2~8 格，默认 3）。第二条线由整条路径整体平移生成，全程首尾相接，车站出口处以浅弯分岔并入。</p>
         </article>
         <article class="card new">
-          <h3>跨区域连通 <em>1.3.2 新增</em></h3>
+          <h3>跨区域连通 <em>1.3.0 新增</em></h3>
           <p>相邻两个分区会在公共边界上取同一个对接点（坐标与高度都由共享种子算出），两边的轨道在边界处头对头接上，路网不再是一块块孤岛。</p>
+        </article>
+        <article class="card new">
+          <h3>游戏内配置界面 <em>1.3.1 新增</em></h3>
+          <p>接上 Cloth Config 后，所有配置项都在「模组 → 纵横铁路 → 配置」里，按世界生成、轨道、车站分好类，带中文说明，改完保存即可生效。</p>
         </article>
         <article class="card new">
           <h3>预热周边区域 <em>1.3.2 新增</em></h3>
@@ -90,7 +94,8 @@
   <section id="config" class="section alt">
     <div class="wrap">
       <h2>配置</h2>
-      <p class="sub">文件位置：<code>config/zongheng_railway-common.toml</code>。改完重进世界生效。</p>
+      <p class="sub">装了 <a href="https://modrinth.com/mod/cloth-config" target="_blank" rel="noopener">Cloth Config</a> 就能在游戏里改：<strong>模组列表 → 纵横铁路 → 配置</strong>，所有配置项分好类摆在界面上，保存即生效，不用找文件、不用重开世界。</p>
+      <p class="sub">没装 Cloth Config 也不影响模组运行，直接编辑 <code>config/zongheng_railway-common.toml</code> 即可（改完即时生效）。</p>
       <div class="table-scroll">
         <table>
           <thead>
@@ -123,6 +128,7 @@
           <span class="num">1</span>
           <h3>装好前置</h3>
           <p>Minecraft <strong>1.21.1</strong> + NeoForge <strong>21.1.x</strong>，再装 <strong>Create 6.0.6</strong>。Ponder 与 Flywheel 由 Create 自带，不用单独装。</p>
+          <p>想要游戏内图形配置界面，再装一个 <strong>Cloth Config 15.0+</strong>（可选，不装也能玩）。</p>
         </div>
         <div class="step">
           <span class="num">2</span>
