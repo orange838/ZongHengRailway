@@ -49,5 +49,14 @@ public class ModLanguageProviderENUS extends LanguageProvider {
         this.add("config.zongheng_railway.placeTracksUsingTrackSpawner", "Place rails with the track spawner");
         this.add("config.zongheng_railway.placeTracksUsingTrackSpawner.tooltip.1", "On = rails are placed when the track spawner runs.");
         this.add("config.zongheng_railway.placeTracksUsingTrackSpawner.tooltip.2", "Off = rails are placed directly during world generation.");
+        this.add("config.zongheng_railway.preheatAroundPlayer", "Pre-plan neighbouring regions");
+        this.add("config.zongheng_railway.preheatAroundPlayer.tooltip.1", "When a new railway region is entered, plan the regions around it in the background.");
+        this.add("config.zongheng_railway.preheatAroundPlayer.tooltip.2", "Planning only - no rails are placed inside chunks that are not loaded yet.");
+        this.add("config.zongheng_railway.preheatRadius", "Pre-plan radius");
+        this.add("config.zongheng_railway.preheatRadius.tooltip.1", "How many rings of regions around the current one get pre-planned. 1 = 3x3 regions (12288x12288 blocks).");
+        this.add("config.zongheng_railway.preheatRadius.tooltip.2", "Only used when \"Pre-plan neighbouring regions\" is on. 0 = only the current region.");
+        this.add("config.zongheng_railway.planTimeoutSeconds", "Plan timeout (seconds)");
+        this.add("config.zongheng_railway.planTimeoutSeconds.tooltip.1", "How long chunk generation may wait for a region plan before letting the chunk generate without railway.");
+        this.add("config.zongheng_railway.planTimeoutSeconds.tooltip.2", "0 = wait forever (the original behaviour). Planning still finishes in the background, so the rails appear when you come back.");
     }
 }

@@ -1,5 +1,6 @@
 package com.orange838.zongheng.railway;
 
+import com.orange838.zongheng.Config;
 import com.orange838.zongheng.ZongHengRailway;
 import com.orange838.zongheng.util.AdaptiveHeightSampler;
 import com.orange838.zongheng.util.ModSaveData;
@@ -14,6 +15,7 @@ import net.neoforged.neoforge.common.Tags;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.*;
 
 import static com.orange838.zongheng.ZongHengRailway.CHUNK_GROUP_SIZE;
@@ -32,6 +34,11 @@ public class RailwayBuilder {
     private final LinkedBlockingQueue<Runnable> regionRailwayLoadQueue = new LinkedBlockingQueue<Runnable>(); //线程池
     private final ThreadPoolExecutor regionRailwayLoadPoolExecutor = new ThreadPoolExecutor(64, 1024, 1, TimeUnit.DAYS, regionRailwayLoadQueue);
     private final WorldGenRegion level;
+
+    /** 已经做过「周边预热」的中心区域（含当时用的半径），避免同一区域每次生成区块都重复提交。 */
+    private final Set<String> preheatedRegions = ConcurrentHashMap.newKeySet();
+    /** 已经被预热提交过规划的目标区域，防止相邻的几个中心区域把同一个目标算好几遍。 */
+    private final Set<RegionPos> preheatedTargets = ConcurrentHashMap.newKeySet();
 
     private RailwayBuilder(WorldGenRegion level) {
         this.level = level;
@@ -56,15 +63,22 @@ public class RailwayBuilder {
     public void generateRailway(RegionPos regionPos) {
         // 如果路线已经生成，直接返回
         if (regionRailways.containsKey(regionPos)) {
+            preheatAround(regionPos);
+            return;
+        }
+
+        ServerLevel overworld = Objects.requireNonNull(level.getServer()).getLevel(ServerLevel.OVERWORLD);
+        if (overworld == null) {
             return;
         }
 
         // 尝试从本地数据中读取
-        ModSaveData data  = ModSaveData.get(Objects.requireNonNull(level.getServer()).getLevel(ServerLevel.OVERWORLD));
+        ModSaveData data = ModSaveData.get(overworld);
         RailwayMap savedData = data.getRailwayMap(regionPos);
         if (savedData != null) {
             regionRailways.put(regionPos, savedData);
             ZongHengRailway.LOGGER.info("Region {} Done! Read From Local Data", regionPos);
+            preheatAround(regionPos);
             return;
         }
 
@@ -76,7 +90,7 @@ public class RailwayBuilder {
                     // 生成铁路步骤...
                     RailwayMap railwayMap = new RailwayMap(regionPos);
 
-                    railwayMap.startPlanningRoutes(level);
+                    railwayMap.startPlanningRoutes(overworld);
 
                     // 放置路线规划结果
                     regionRailways.put(regionPos, railwayMap);
@@ -87,11 +101,92 @@ public class RailwayBuilder {
                 regionFutures.put(regionPos, f);
             }
             // 等待线程生成
-            regionFutures.get(regionPos).get();
+            Future<?> future = regionFutures.get(regionPos);
+            int timeout = Config.planTimeoutSeconds;
+            if (timeout > 0) {
+                // 有超时保护：算不完就先放这个区块过去，规划仍在后台继续
+                try {
+                    future.get(timeout, TimeUnit.SECONDS);
+                } catch (TimeoutException e) {
+                    ZongHengRailway.LOGGER.warn(
+                            "Region {} planning is taking longer than {}s, letting this chunk generate without railway for now",
+                            regionPos, timeout);
+                    return;
+                }
+            } else {
+                future.get();
+            }
         } catch (InterruptedException | ExecutionException e) {
-            ZongHengRailway.LOGGER.error(e.getMessage());
-        } finally {
             regionFutures.remove(regionPos);
+            ZongHengRailway.LOGGER.error("Region {} planning failed", regionPos, e);
+        } finally {
+            if (regionRailways.containsKey(regionPos)) {
+                regionFutures.remove(regionPos);
+            }
+        }
+
+        // 本区域规划完成后，顺手把周边区域也提前算好，走到边界时不卡顿、两边对接点一致
+        preheatAround(regionPos);
+    }
+
+    /**
+     * 把当前区域周围一圈区域提交到同一个线程池异步规划。
+     *
+     * <p>只做规划（计算），不放置任何方块：未加载的区块不会凭空出现铁轨，
+     * 等玩家真正走到那里、区块开始生成时，规划结果直接可用。
+     */
+    private void preheatAround(RegionPos center) {
+        if (!Config.preheatAroundPlayer) {
+            return;
+        }
+        int radius = Math.max(0, Math.min(3, Config.preheatRadius));
+        if (!preheatedRegions.add(center.x() + "," + center.z() + "," + radius)) {
+            return;
+        }
+        ServerLevel overworld = level.getServer().getLevel(ServerLevel.OVERWORLD);
+        if (overworld == null) {
+            return;
+        }
+        ModSaveData data = ModSaveData.get(overworld);
+
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                if (dx == 0 && dz == 0) {
+                    continue;
+                }
+                RegionPos target = new RegionPos(center.x() + dx, center.z() + dz);
+                if (regionRailways.containsKey(target) || regionFutures.containsKey(target)) {
+                    continue;
+                }
+                // 存档里已有结果的区域不需要重算（直接读 map，避免 getRailwayMap 里的 setDirty）
+                if (data.regionRailways.containsKey(target)) {
+                    continue;
+                }
+                // 几个中心区域的预热范围会互相重叠，这里保证同一个目标区域只提交一次
+                if (!preheatedTargets.add(target)) {
+                    continue;
+                }
+                var f = regionRailwayLoadPoolExecutor.submit(() -> {
+                    try {
+                        RailwayMap railwayMap = new RailwayMap(target);
+                        railwayMap.startPlanningRoutes(overworld);
+                        regionRailways.put(target, railwayMap);
+                        data.putRailwayMap(target, railwayMap);
+                    } catch (Exception e) {
+                        // 失败的允许下次再试
+                        preheatedTargets.remove(target);
+                        ZongHengRailway.LOGGER.error("Pre-planning region {} failed", target, e);
+                    } finally {
+                        // 规划结果已进 regionRailways，future 不再需要留着
+                        regionFutures.remove(target);
+                    }
+                });
+                regionFutures.put(target, f);
+                // 任务可能在 put 之前就结束并移除了自己，这里补一次清理，避免残留已完成的 future
+                if (f.isDone()) {
+                    regionFutures.remove(target, f);
+                }
+            }
         }
     }
 

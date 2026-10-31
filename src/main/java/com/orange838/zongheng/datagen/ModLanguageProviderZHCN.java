@@ -49,5 +49,14 @@ public class ModLanguageProviderZHCN extends LanguageProvider {
         this.add("config.zongheng_railway.placeTracksUsingTrackSpawner", "由生成器铺设铁轨");
         this.add("config.zongheng_railway.placeTracksUsingTrackSpawner.tooltip.1", "开启时，铁轨在生成器运行时才铺设。");
         this.add("config.zongheng_railway.placeTracksUsingTrackSpawner.tooltip.2", "关闭时，铁轨在世界生成阶段直接铺好。");
+        this.add("config.zongheng_railway.preheatAroundPlayer", "预热周边区域");
+        this.add("config.zongheng_railway.preheatAroundPlayer.tooltip.1", "进入一个新的铁路区域时，顺便把周围一圈区域的路网提前算好。");
+        this.add("config.zongheng_railway.preheatAroundPlayer.tooltip.2", "只提前做规划（计算），不会在未加载的区块里凭空放置铁轨。");
+        this.add("config.zongheng_railway.preheatRadius", "预热半径");
+        this.add("config.zongheng_railway.preheatRadius.tooltip.1", "当前区域周围多少圈区域会被提前规划。1 表示 3x3 个区域（12288×12288 格）。");
+        this.add("config.zongheng_railway.preheatRadius.tooltip.2", "只在「预热周边区域」开启时生效。0 表示只规划当前区域。");
+        this.add("config.zongheng_railway.planTimeoutSeconds", "规划超时（秒）");
+        this.add("config.zongheng_railway.planTimeoutSeconds.tooltip.1", "区块生成等待区域规划的最长秒数，超时后该区块先正常生成。");
+        this.add("config.zongheng_railway.planTimeoutSeconds.tooltip.2", "0 表示一直等（原版行为）。超时后规划仍在后台继续，走开再回来会补上。");
     }
 }

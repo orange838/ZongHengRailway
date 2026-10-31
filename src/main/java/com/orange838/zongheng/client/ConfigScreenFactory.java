@@ -101,10 +101,45 @@ public final class ConfigScreenFactory implements IConfigScreenFactory {
                 .setSaveConsumer(Config.CONNECT_ACROSS_REGIONS::set)
                 .build();
 
+        var preheat = entries.startBooleanToggle(
+                        Component.translatable("config.zongheng_railway.preheatAroundPlayer"),
+                        Config.PREHEAT_AROUND_PLAYER.get())
+                .setDefaultValue(Config.PREHEAT_AROUND_PLAYER.getDefault())
+                .setTooltip(
+                        Component.translatable("config.zongheng_railway.preheatAroundPlayer.tooltip.1"),
+                        Component.translatable("config.zongheng_railway.preheatAroundPlayer.tooltip.2"))
+                .setSaveConsumer(Config.PREHEAT_AROUND_PLAYER::set)
+                .build();
+
+        var preheatRadius = entries.startIntSlider(
+                        Component.translatable("config.zongheng_railway.preheatRadius"),
+                        Config.PREHEAT_RADIUS.get(), 0, 3)
+                .setDefaultValue(Config.PREHEAT_RADIUS.getDefault())
+                .setTooltip(
+                        Component.translatable("config.zongheng_railway.preheatRadius.tooltip.1"),
+                        Component.translatable("config.zongheng_railway.preheatRadius.tooltip.2"))
+                .setSaveConsumer(Config.PREHEAT_RADIUS::set)
+                .build();
+
+        var planTimeout = entries.startIntField(
+                        Component.translatable("config.zongheng_railway.planTimeoutSeconds"),
+                        Config.PLAN_TIMEOUT_SECONDS.get())
+                .setMin(0)
+                .setMax(600)
+                .setDefaultValue(Config.PLAN_TIMEOUT_SECONDS.getDefault())
+                .setTooltip(
+                        Component.translatable("config.zongheng_railway.planTimeoutSeconds.tooltip.1"),
+                        Component.translatable("config.zongheng_railway.planTimeoutSeconds.tooltip.2"))
+                .setSaveConsumer(Config.PLAN_TIMEOUT_SECONDS::set)
+                .build();
+
         category.addEntry(everywhere);
         category.addEntry(probability);
         category.addEntry(distance);
         category.addEntry(connect);
+        category.addEntry(preheat);
+        category.addEntry(preheatRadius);
+        category.addEntry(planTimeout);
     }
 
     /** 轨道：双线与间距，间距跟随双线开关。 */

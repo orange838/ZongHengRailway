@@ -57,6 +57,25 @@ public class Config {
             .comment("Use the track spawner,(true) or place rails during world generation.(false)")
             .define("placeTracksUsingTrackSpawner", true);
 
+    public static final ModConfigSpec.BooleanValue PREHEAT_AROUND_PLAYER = BUILDER
+            .comment("Pre-plan the railway regions around a newly entered region.",
+                    "进入一个新的铁路区域时，顺便把周围一圈区域的路网提前算好。",
+                    "只提前做规划（计算），不会在未加载的区块里凭空放置铁轨。")
+            .define("preheatAroundPlayer", true);
+
+    public static final ModConfigSpec.IntValue PREHEAT_RADIUS = BUILDER
+            .comment("Only used when preheatAroundPlayer is true.",
+                    "How many regions around the current one are pre-planned. 1 = 3x3 regions (12288x12288 blocks).",
+                    "只在「预热周边区域」开启时生效。0 表示只规划当前区域，1 表示周围 3x3 个区域。")
+            .defineInRange("preheatRadius", 1, 0, 3);
+
+    public static final ModConfigSpec.IntValue PLAN_TIMEOUT_SECONDS = BUILDER
+            .comment("How long chunk generation may wait for a region plan before giving up.",
+                    "0 = wait forever (the original behaviour).",
+                    "区块生成等待区域规划的最长秒数。超时后该区块先正常生成，这一段暂时没有铁轨，",
+                    "但规划仍在后台继续，走开再回来就会补上。0 表示一直等（原版行为）。")
+            .defineInRange("planTimeoutSeconds", 60, 0, 600);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     public static boolean generateRailwayEverywhere;
@@ -68,6 +87,9 @@ public class Config {
     public static boolean enableTrackSpawner;
     public static boolean generateTrackSpawner;
     public static boolean useTrackSpawnerPlaceTrack;
+    public static boolean preheatAroundPlayer;
+    public static int preheatRadius;
+    public static int planTimeoutSeconds;
 
     /**
      * 把当前值写回配置文件，并立即重新应用一次。
@@ -96,6 +118,9 @@ public class Config {
         enableTrackSpawner = ENABLE_TRACK_SPAWNER.get();
         generateTrackSpawner = GENERATE_TRACK_SPAWNER.get();
         useTrackSpawnerPlaceTrack = PLACE_TRACKS_USING_TRACK_SPAWNER.get();
+        preheatAroundPlayer = PREHEAT_AROUND_PLAYER.get();
+        preheatRadius = PREHEAT_RADIUS.get();
+        planTimeoutSeconds = PLAN_TIMEOUT_SECONDS.get();
     }
 
     @SubscribeEvent
