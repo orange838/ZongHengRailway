@@ -1,0 +1,64 @@
+name: Sync site version
+
+# 发布 Release 时，自动把 site/index.html 里的版本号改成新版本并推送。
+# Cloudflare Pages 监听仓库推送，因此推送后网站会自动重新部署。
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要同步的 Release 标签，例如 v1.4.0-mc21.1"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-site-version
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    # 预发布（prerelease）不更新网站版本号
+    if: github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Sync version in site/index.html
+        id: sync
+        env:
+          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          echo "tag=$TAG"
+          python scripts/update_site_version.py "$TAG"
+          if git diff --quiet -- site/index.html; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/index.html
+          git commit -m "chore(site): sync version from release ${TAG} [skip ci]"
+          git push origin HEAD:${{ github.event.repository.default_branch }}
